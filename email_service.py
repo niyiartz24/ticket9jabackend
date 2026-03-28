@@ -1,104 +1,101 @@
-import resend
 import os
-from io import BytesIO
+import resend
+from base64 import b64encode
 
 resend.api_key = os.getenv('RESEND_API_KEY')
 
-def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name, ticket_type, event_date, event_location, qr_code_bytes):
-    """
-    Send ticket email with QR code attachment
-    """
+def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name, 
+                     ticket_type, event_date, event_location, qr_code_bytes):
+    """Send ticket email with QR code"""
+    
     try:
-        # Create HTML email template
-        html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }}
-        .ticket-container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-        .ticket-header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }}
-        .ticket-body {{ padding: 30px; }}
-        .ticket-number {{ font-size: 28px; font-weight: bold; color: #667eea; margin: 20px 0; text-align: center; letter-spacing: 2px; }}
-        .qr-container {{ text-align: center; padding: 20px; background: white; margin: 20px 0; border-radius: 8px; }}
-        .qr-code {{ max-width: 220px; height: auto; }}
-        .info-row {{ margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }}
-        .info-label {{ font-weight: bold; color: #666; font-size: 12px; text-transform: uppercase; }}
-        .info-value {{ color: #333; font-size: 16px; margin-top: 5px; }}
-        .footer {{ text-align: center; padding: 20px; color: #999; font-size: 12px; }}
-    </style>
-</head>
-<body>
-    <div class="ticket-container">
-        <div class="ticket-header">
-            <h1 style="margin: 0; font-size: 28px;">Ticket9ja</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Your Event Ticket</p>
-        </div>
+        print(f"\n📧 EMAIL SERVICE CALLED")
+        print(f"  To: {recipient_email}")
+        print(f"  Name: {recipient_name}")
+        print(f"  Ticket: {ticket_number}")
+        print(f"  Event: {event_name}")
         
-        <div class="ticket-body">
-            <div class="ticket-number">{ticket_number}</div>
-            
-            <div class="qr-container">
-                <img src="cid:qrcode" alt="QR Code" class="qr-code"/>
-                <p style="margin-top: 10px; color: #666; font-size: 14px;">Scan this code at the event</p>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Attendee Name</div>
-                <div class="info-value">{recipient_name}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Event</div>
-                <div class="info-value">{event_name}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Ticket Type</div>
-                <div class="info-value">{ticket_type}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Date & Time</div>
-                <div class="info-value">{event_date}</div>
-            </div>
-            
-            <div class="info-row">
-                <div class="info-label">Venue</div>
-                <div class="info-value">{event_location}</div>
-            </div>
-        </div>
+        # Check if API key is set
+        if not resend.api_key or resend.api_key == '':
+            print("❌ RESEND_API_KEY not set in environment!")
+            return False
         
-        <div class="footer">
-            <p>Please present this ticket (digital or printed) at the event entrance.</p>
-            <p>For support, contact support@ticket9ja.com</p>
-        </div>
-    </div>
-</body>
-</html>
-"""
+        print(f"  API Key: {resend.api_key[:10]}...{resend.api_key[-5:]}")
         
-        # Send email with QR code attachment
-        email_from = os.getenv('EMAIL_FROM', 'Ticket9ja <tickets@ticket9ja.com>')
+        # Convert QR code to base64
+        qr_base64 = b64encode(qr_code_bytes).decode('utf-8')
         
-        params = {
+        # Email HTML
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; background: #f7fafc; padding: 20px; }}
+                .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }}
+                .content {{ padding: 30px; }}
+                .ticket-info {{ background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                .qr-code {{ text-align: center; margin: 20px 0; }}
+                .qr-code img {{ width: 200px; height: 200px; }}
+                .footer {{ background: #f7fafc; padding: 20px; text-align: center; color: #718096; font-size: 14px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🎟️ Your Ticket is Ready!</h1>
+                </div>
+                <div class="content">
+                    <p>Hi {recipient_name},</p>
+                    <p>Your ticket for <strong>{event_name}</strong> has been confirmed!</p>
+                    
+                    <div class="ticket-info">
+                        <h3>Event Details</h3>
+                        <p><strong>Event:</strong> {event_name}</p>
+                        <p><strong>Date:</strong> {event_date}</p>
+                        <p><strong>Location:</strong> {event_location}</p>
+                        <p><strong>Ticket Type:</strong> {ticket_type}</p>
+                        <p><strong>Ticket Number:</strong> {ticket_number}</p>
+                    </div>
+                    
+                    <div class="qr-code">
+                        <p><strong>Your QR Code:</strong></p>
+                        <img src="data:image/png;base64,{qr_base64}" alt="QR Code">
+                        <p style="font-size: 14px; color: #718096;">Present this QR code at the entrance</p>
+                    </div>
+                    
+                    <p>We look forward to seeing you at the event!</p>
+                </div>
+                <div class="footer">
+                    <p>Powered by Ticket9ja</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        email_from = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
+        print(f"  From: {email_from}")
+        
+        # Send email
+        print("  📤 Sending via Resend API...")
+        response = resend.Emails.send({
             "from": email_from,
             "to": [recipient_email],
             "subject": f"Your Ticket for {event_name}",
-            "html": html_content,
-            "attachments": [{
-                "content": qr_code_bytes,
-                "filename": "qrcode.png",
-                "content_id": "qrcode"
-            }]
-        }
+            "html": html
+        })
         
-        email = resend.Emails.send(params)
-        print(f"Ticket email sent to {recipient_email}")
+        print(f"  ✅ Resend Response: {response}")
+        print(f"  📨 Email ID: {response.get('id', 'N/A')}")
+        
         return True
         
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"\n❌ EMAIL ERROR:")
+        print(f"  Type: {type(e).__name__}")
+        print(f"  Message: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
