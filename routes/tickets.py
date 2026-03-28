@@ -122,19 +122,37 @@ def issue_ticket():
                 })
                 
                 # Send email (optional - requires Resend setup)
-                try:
-                    from email_service import send_ticket_email
-                    
-                    send_ticket_email(
-                        recipient_email=recipient_email,
-                        recipient_name=recipient_name,
-                        ticket_number=ticket_number,
-                        event_name=event['name'],
-                        ticket_type=ticket_type['name'],
-                        event_date=event['event_date'].strftime('%B %d, %Y at %I:%M %p') if event['event_date'] else 'TBA',
-                        event_location=event['location'],
-                        qr_code_bytes=qr_bytes
-                    )
+        try:
+            print(f"🔔 Attempting to send email to: {recipient_email}")
+            from email_service import send_ticket_email
+            
+            email_result = send_ticket_email(
+                recipient_email=recipient_email,
+                recipient_name=recipient_name,
+                ticket_number=ticket_number,
+                event_name=event['name'],
+                ticket_type=ticket_type['name'],
+                event_date=event['event_date'].strftime('%B %d, %Y at %I:%M %p') if event['event_date'] else 'TBA',
+                event_location=event['location'],
+                qr_code_bytes=qr_bytes
+            )
+            
+            if email_result:
+                print(f"✅ Email sent successfully to {recipient_email}")
+                # Mark email as sent
+                execute_query(
+                    'UPDATE tickets SET email_sent = true WHERE ticket_number = %s',
+                    (ticket_number,),
+                    fetch=False
+                )
+            else:
+                print(f"⚠️ Email sending returned False for {recipient_email}")
+                
+        except Exception as email_error:
+            print(f"❌ Email sending failed: {email_error}")
+            import traceback
+            traceback.print_exc()
+            # Continue even if email fails
                     
                     # Mark email as sent
                     execute_query(
