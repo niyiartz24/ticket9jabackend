@@ -6,15 +6,13 @@ resend.api_key = os.getenv('RESEND_API_KEY')
 
 def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name, 
                      ticket_type, event_date, event_location, qr_code_bytes):
-    """Send ticket email with QR code as attachment"""
+    """Send single ticket email with QR code as attachment"""
     
     try:
-        print(f"\n📧 Sending email to: {recipient_email}")
-        
         # Convert QR code to base64 for attachment
         qr_base64 = b64encode(qr_code_bytes).decode('utf-8')
         
-        # Email HTML (without embedded QR code)
+        # Email HTML
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -100,16 +98,6 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
                     color: #92400e;
                     font-size: 14px;
                 }}
-                .button {{
-                    display: inline-block;
-                    background: #667eea;
-                    color: white;
-                    padding: 12px 30px;
-                    text-decoration: none;
-                    border-radius: 6px;
-                    font-weight: 600;
-                    margin: 15px 0;
-                }}
                 .footer {{ 
                     background: #f7fafc; 
                     padding: 25px; 
@@ -117,9 +105,6 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
                     color: #718096; 
                     font-size: 14px;
                     border-top: 1px solid #e2e8f0;
-                }}
-                .footer p {{
-                    margin: 5px 0;
                 }}
             </style>
         </head>
@@ -130,7 +115,7 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
                 </div>
                 <div class="content">
                     <p>Hi <strong>{recipient_name}</strong>,</p>
-                    <p>Great news! Your ticket for <strong>{event_name}</strong> has been confirmed and is ready to use.</p>
+                    <p>Your ticket for <strong>{event_name}</strong> has been confirmed!</p>
                     
                     <div class="ticket-info">
                         <h3>📋 Event Details</h3>
@@ -143,15 +128,15 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
                     
                     <div class="qr-section">
                         <h3>📱 Your QR Code</h3>
-                        <p><strong>Your QR code is attached to this email as "ticket-qr-code.png"</strong></p>
+                        <p><strong>Your QR code is attached to this email</strong></p>
                         <p>Download and save it to your phone for easy access at the event.</p>
                     </div>
                     
                     <div class="qr-note">
-                        <p><strong>💡 Important:</strong> Present the attached QR code at the entrance. You can show it on your phone or print it out.</p>
+                        <p><strong>💡 Important:</strong> Present the attached QR code at the entrance.</p>
                     </div>
                     
-                    <p>We're excited to see you at the event! If you have any questions, please don't hesitate to reach out.</p>
+                    <p>See you at the event!</p>
                 </div>
                 <div class="footer">
                     <p><strong>Ticket9ja</strong></p>
@@ -165,7 +150,6 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
         email_from = os.getenv('EMAIL_FROM', 'onboarding@resend.dev')
         
         # Send email with QR code as attachment
-        print("  📤 Sending via Resend API with QR attachment...")
         response = resend.Emails.send({
             "from": email_from,
             "to": [recipient_email],
@@ -173,18 +157,14 @@ def send_ticket_email(recipient_email, recipient_name, ticket_number, event_name
             "html": html,
             "attachments": [
                 {
-                    "filename": "ticket-qr-code.png",
+                    "filename": f"{ticket_number}.png",
                     "content": qr_base64
                 }
             ]
         })
         
-        print(f"  ✅ Email sent! ID: {response.get('id', 'N/A')}")
-        
         return True
         
     except Exception as e:
-        print(f"\n❌ EMAIL ERROR: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"     Email sending error: {type(e).__name__}: {str(e)}")
         return False
